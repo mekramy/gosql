@@ -1,6 +1,7 @@
 package query
 
 import (
+	"regexp"
 	"sync"
 
 	"github.com/mekramy/gofs"
@@ -29,7 +30,7 @@ func NewQueryManager(fs gofs.FlexibleFS, options ...Options) (QueryManager, erro
 }
 
 // QueryManager defines methods for managing and retrieving SQL queries.
-// Queries should be marked with `-- query: query-name` comments in the SQL files.
+// Queries should be defined with `-- { query: name }` comments in the SQL files.
 type QueryManager interface {
 	// Load retrieves all queries from the filesystem and caches them.
 	Load() error
@@ -60,10 +61,7 @@ func (m *queryManager) Load() error {
 	defer m.mutex.Unlock()
 
 	// Locate files matching the specified extension
-	files, err := m.fs.Lookup(
-		m.root,
-		extPattern("", m.ext),
-	)
+	files, err := m.fs.Lookup(m.root, ".*"+regexp.QuoteMeta(m.ext))
 	if err != nil {
 		return err
 	}

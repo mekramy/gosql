@@ -38,10 +38,10 @@ func TestFS(t *testing.T) {
 	fs := &MockFS{
 		files: map[string]string{
 			"database/queries/user.sql": `
--- query: list
+-- { query: list }
 SELECT * FROM users WHERE deleted_at IS NULL;
 
--- query: single
+-- { query: single }
 SELECT id, name, age FROM users WHERE @conditions;
 			`,
 		},
@@ -58,11 +58,11 @@ SELECT id, name, age FROM users WHERE @conditions;
 
 	expected := `SELECT * FROM users WHERE deleted_at IS NULL;`
 	if q := manager.Get("user/list"); q != expected {
-		t.Fatalf("expect %s, got %s", expected, q)
+		t.Fatalf(`expect "%s", got "%s"`, expected, q)
 	}
 
 	expected = `SELECT id, name, age FROM users WHERE deleted_at IS NULL AND (name = ? OR family = ?);`
 	if q := manager.Query("user/single").And("deleted_at IS NULL").AndClosure("name = ? OR family = ?").Build(); q != expected {
-		t.Fatalf("expect %s, got %s", expected, q)
+		t.Fatalf(`expect "%s", got "%s"`, expected, q)
 	}
 }
