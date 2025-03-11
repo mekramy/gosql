@@ -34,42 +34,54 @@ func toName(path, root, ext string) string {
 	return normalizePath(path)
 }
 
-// parseQueries extracts all named queries from the given SQL file content.
+// parseQueries extracts named queries from the given SQL content.
+// Query sections are defined using the format: "-- {query: name}"
 func parseQueries(content string) (map[string]string, error) {
-	var name, query string
+	var name, body string
 	res := make(map[string]string)
 
-	// Parse query
-	rx, err := regexp.Compile(`\s*--\s*\{\s*(query)\s*:\s*([\w\s]+)\s*\}`)
-	parseQuery := func(content string) (string, bool) {
-		matches := rx.FindStringSubmatch(content)
-		if len(matches) == 3 && strings.TrimSpace(matches[2]) != "" {
-			return strings.TrimSpace(matches[2]), true
-		}
-		return "", false
-	}
+	// Compile query regexp
+	rx, err := regexp.Compile(`^\s*--\s*\{\s*(\w+):\s*([\w\s]+)\s*\}$`)
 	if err != nil {
 		return nil, err
 	}
 
+	// Parse query helper functions
+	parseTag := func(content string) (string, string, bool) {
+		matches := rx.FindStringSubmatch(content)
+		if len(matches) == 3 {
+			matches[2] = strings.TrimSpace(matches[2])
+			if matches[2] != "" {
+				return matches[1], matches[2], true
+			}
+		}
+		return "", "", false
+	}
+
 	// Scan lines
 	scanner := bufio.NewScanner(strings.NewReader(content))
-	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		line := scanner.Text()
-		if q, ok := parseQuery(line); ok {
+		line := strings.TrimSpace(scanner.Text())
+		tag, query, isNew := parseTag(line)
+		if isNew {
+			// Save old
 			if name != "" {
-				res[name] = strings.TrimRight(query, "\n")
+				res[name] = strings.TrimRight(body, "\n")
 			}
-			name = q
-			query = ""
-		} else if strings.TrimSpace(line) != "" && name != "" {
-			query = query + line + "\n"
+
+			// Start new
+			name = ""
+			body = ""
+			if tag == "query" {
+				name = query
+			}
+		} else if line != "" && name != "" {
+			body = body + line + "\n"
 		}
 	}
 
-	if name != "" && query != "" {
-		res[name] = strings.TrimRight(query, "\n")
+	if name != "" {
+		res[name] = strings.TrimRight(body, "\n")
 	}
 
 	return res, nil

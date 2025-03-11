@@ -41,6 +41,15 @@ func TestFS(t *testing.T) {
 -- { query: list }
 SELECT * FROM users WHERE deleted_at IS NULL;
 
+
+-- { undefined: unsupported }
+SELECT name, family
+FROM users
+WHERE
+	deleted_at IS NULL
+	AND age > 18
+	AND name ILIKE '%@phrase%';
+
 -- { query: single }
 SELECT id, name, age FROM users WHERE @conditions;
 			`,
@@ -50,6 +59,10 @@ SELECT id, name, age FROM users WHERE @conditions;
 	manager, err := query.NewQueryManager(fs, query.WithRoot("database/queries"))
 	if err != nil {
 		t.Fatal(err.Error())
+	}
+
+	if q := manager.Get("user/unsupported"); q != "" {
+		t.Fatal("unsupported section must ignored")
 	}
 
 	if _, exists := manager.Find("not-exists-query"); exists {
