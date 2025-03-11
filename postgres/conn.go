@@ -51,7 +51,7 @@ type Connection interface {
 	Exec(ctx context.Context, sql string, arguments ...any) error
 
 	// Scan executes a raw SQL query on the connection's database and return a standard scanner.
-	Scan(ctx context.Context, sql string, arguments ...any) (gosql.Scanner, error)
+	Scan(ctx context.Context, sql string, arguments ...any) (gosql.Rows, error)
 
 	// Close terminates the database connection pool.
 	Close() error
@@ -88,7 +88,7 @@ func (d *pgxConnection) Exec(c context.Context, s string, args ...any) error {
 	return err
 }
 
-func (d *pgxConnection) Scan(c context.Context, s string, args ...any) (gosql.Scanner, error) {
+func (d *pgxConnection) Scan(c context.Context, s string, args ...any) (gosql.Rows, error) {
 	rows, err := d.db.Query(c, s, args...)
 	if err != nil {
 		return nil, err
