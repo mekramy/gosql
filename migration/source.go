@@ -3,8 +3,16 @@ package migration
 import (
 	"context"
 
+	"github.com/mekramy/gosql/mysql"
 	"github.com/mekramy/gosql/postgres"
 )
+
+// NewMySQLSource creates a new MySQL migration source using the provided connection.
+func NewMySQLSource(conn mysql.Connection) MigrationSource {
+	return &mysqlSource{
+		conn: conn,
+	}
+}
 
 // NewPostgresSource creates a new PostgreSQL migration source using the provided connection.
 func NewPostgresSource(conn postgres.Connection) MigrationSource {
