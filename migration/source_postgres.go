@@ -13,13 +13,12 @@ type postgresSource struct {
 }
 
 func (ps *postgresSource) Transaction(c context.Context, cb func(ExecutableScanner) error) error {
-	tx, err := ps.conn.Database().BeginTx(c, pgx.TxOptions{})
+	tx, err := ps.conn.Database().Begin(c)
 	if err != nil {
 		return err
 	}
 
-	px := &postgresTx{tx: tx}
-	if err := cb(px); err != nil {
+	if err := cb(&postgresTx{tx: tx}); err != nil {
 		tx.Rollback(c)
 		return err
 	}
