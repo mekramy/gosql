@@ -1,64 +1,144 @@
 package postgres_test
 
 import (
-	"fmt"
+	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/mekramy/gosql/postgres"
 )
 
-type User struct {
-	Id   int    `db:"id"`
-	Name string `db:"name"`
-}
+func TestRepository(t *testing.T) {
+	type User struct {
+		Id   int    `db:"id"`
+		Name string `db:"name"`
+	}
+	ctx := context.Background()
+	config := postgres.NewConfig().
+		Host("localhost").
+		Port(5432).
+		User("postgres").
+		Password("root").
+		Database("test")
 
-func (u *User) Transform() error {
-	u.Name = u.Name + fmt.Sprintf(" %d", u.Id)
-	return nil
-}
-
-func TestCommander(t *testing.T) {
-	e := NewMockExecutable("UPDATE `users` SET name = $1, family = $2 WHERE id = $3;")
-	_, err := postgres.NewCmd(e).
-		Command("UPDATE `users` SET name = ?, family = ? WHERE id = ?;").
-		Exec(t.Context(), "John", "Doe", 3)
+	conn, err := postgres.New(ctx, config.Build())
 	if err != nil {
-		t.Fatal(err.Error())
+		t.Fatalf("expected no error, got %v", err)
 	}
-}
 
-func TestInserter(t *testing.T) {
-	u := User{Name: "John doe"}
-	e := NewMockExecutable(`INSERT INTO users ("name") VALUES ($1);`)
-	_, err := postgres.NewInserter[User](e).
-		Table("users").
-		Insert(t.Context(), u, postgres.OnlyFields("name"))
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-}
+	t.Run("Init", func(t *testing.T) {
+		err := conn.Transaction(ctx, func(tx pgx.Tx) error {
+			_, err := postgres.NewCmd(tx).
+				Command("DROP TABLE IF EXISTS users CASCADE;").
+				Exec(ctx)
+			if err != nil {
+				return err
+			}
 
-func TestUpdater(t *testing.T) {
-	u := User{Name: "John doe"}
-	e := NewMockExecutable(`UPDATE users SET "name" = $1 WHERE id = $2;`)
-	_, err := postgres.NewUpdater[User](e).
-		Table("users").
-		Where("id = ?", 2).
-		Update(t.Context(), u, postgres.SkipFields("id"))
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-}
+			_, err = postgres.NewCmd(tx).
+				Command("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT);").
+				Exec(ctx)
+			if err != nil {
+				return err
+			}
 
-func TestCounter(t *testing.T) {
-	r := NewMockReadable()
-	count, err := postgres.NewCounter(r).
-		Query("SELECT COUNT(*) FROM users;").
-		Count(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 100 {
-		t.Fatalf("expected %d, got %d", 100, count)
-	}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Insert", func(t *testing.T) {
+		err := conn.Transaction(ctx, func(tx pgx.Tx) error {
+			for idx, name := range []string{"John Doe", "Jack Ma"} {
+				u := User{
+					Id:   idx + 1,
+					Name: name,
+				}
+
+				_, err = postgres.NewInserter[User](tx).
+					Table("users").
+					Insert(ctx, u, postgres.OnlyFields("name"))
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		err := conn.Transaction(ctx, func(tx pgx.Tx) error {
+			for idx, name := range []string{"John Doe New", "Jack Ma New"} {
+				u := User{
+					Id:   idx + 1,
+					Name: name,
+				}
+
+				_, err = postgres.NewUpdater[User](tx).
+					Table("users").
+					Where("id = ?", u.Id).
+					Update(ctx, u, postgres.SkipFields("id"))
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Count", func(t *testing.T) {
+		count, err := postgres.NewCounter(conn.Database()).
+			Query("SELECT COUNT(*) FROM users;").
+			Count(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if count != 2 {
+			t.Fatalf("expected 2 users, got %d", count)
+		}
+	})
+
+	t.Run("Single", func(t *testing.T) {
+		jack, err := postgres.NewFinder[User](conn.Database()).
+			Query("SELECT * FROM users WHERE id = ?;").
+			Struct(ctx, 2)
+
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if jack == nil {
+			t.Fatal("expected user, got nil")
+		}
+
+		if jack.Name != "Jack Ma New" {
+			t.Fatalf(`expected "Jack Ma New", got %s`, jack.Name)
+		}
+	})
+
+	t.Run("Multiple", func(t *testing.T) {
+		users, err := postgres.NewFinder[User](conn.Database()).
+			Query("SELECT * FROM users;").
+			Structs(ctx)
+
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if len(users) != 2 {
+			t.Fatalf("expected 2 user, got %d", len(users))
+		}
+	})
+
 }

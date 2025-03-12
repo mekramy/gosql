@@ -61,7 +61,7 @@ func (i *inserter[T]) Insert(ctx context.Context, v T, options ...RepositoryOpti
 	}
 
 	sql := fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES (%s);",
+		`INSERT INTO "%s" (%s) VALUES (%s);`,
 		i.table,
 		strings.Join(columns, ","),
 		strings.Join(placeholders, ","),

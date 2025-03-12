@@ -72,7 +72,7 @@ func (u *updater[T]) Update(ctx context.Context, v T, options ...RepositoryOptio
 	}
 
 	sql := fmt.Sprintf(
-		"UPDATE %s SET %s WHERE %s;",
+		`UPDATE "%s" SET %s WHERE %s;`,
 		u.table,
 		strings.Join(columns, ","),
 		u.where,
