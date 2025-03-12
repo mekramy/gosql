@@ -74,6 +74,7 @@ func (m *migration) Summary() (Summary, error) {
 	}
 
 	result := make(Summary, 0)
+	defer rows.Close()
 	for rows.Next() {
 		var name, stage string
 		err := rows.Scan(&name, &stage)
