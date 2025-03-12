@@ -3,6 +3,7 @@ module github.com/mekramy/gosql
 go 1.24.0
 
 require (
+	github.com/georgysavva/scany/v2 v2.1.3
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/mekramy/gofs v0.0.2
@@ -22,5 +23,6 @@ require (
 	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 )
