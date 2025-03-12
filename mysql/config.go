@@ -14,7 +14,10 @@ func NewConfig() Config {
 		user:     "root",
 		password: "",
 		database: "",
-		options:  map[string]string{"charset": "utf8mb4"},
+		options: map[string]string{
+			"charset":   "utf8mb4",
+			"parseTime": "true",
+		},
 	}
 }
 
