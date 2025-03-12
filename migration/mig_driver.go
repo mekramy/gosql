@@ -98,7 +98,7 @@ func (m *migration) StageSummary(stage string) (Summary, error) {
 	return summaries.ForStage(stage), nil
 }
 
-func (m *migration) Up(options ...MigrationOption) ([]string, error) {
+func (m *migration) Up(options ...MigrationOption) ([]MigrationResult, error) {
 	// Hot reload on dev mode
 	if m.dev {
 		if err := m.Load(); err != nil {
@@ -133,7 +133,7 @@ func (m *migration) Up(options ...MigrationOption) ([]string, error) {
 	// Execute scripts
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-	result := make([]string, 0)
+	result := make([]MigrationResult, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
 		for _, stage := range option.stages {
 			for _, file := range files {
@@ -159,7 +159,10 @@ func (m *migration) Up(options ...MigrationOption) ([]string, error) {
 					return fmt.Errorf("%s: %w", file.name, err)
 				}
 
-				result = append(result, file.name)
+				result = append(result, MigrationResult{
+					Stage: stage,
+					Name:  file.name,
+				})
 			}
 		}
 		return nil
@@ -171,7 +174,7 @@ func (m *migration) Up(options ...MigrationOption) ([]string, error) {
 	return result, nil
 }
 
-func (m *migration) Down(options ...MigrationOption) ([]string, error) {
+func (m *migration) Down(options ...MigrationOption) ([]MigrationResult, error) {
 	// Hot reload on dev mode
 	if m.dev {
 		if err := m.Load(); err != nil {
@@ -206,7 +209,7 @@ func (m *migration) Down(options ...MigrationOption) ([]string, error) {
 	// Execute scripts
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-	result := make([]string, 0)
+	result := make([]MigrationResult, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
 		for _, stage := range option.stages {
 			for _, file := range files {
@@ -232,7 +235,10 @@ func (m *migration) Down(options ...MigrationOption) ([]string, error) {
 					return fmt.Errorf("%s: %w", file.name, err)
 				}
 
-				result = append(result, file.name)
+				result = append(result, MigrationResult{
+					Stage: stage,
+					Name:  file.name,
+				})
 			}
 		}
 		return nil

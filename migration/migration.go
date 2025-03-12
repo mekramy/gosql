@@ -43,8 +43,13 @@ type Migration interface {
 	StageSummary(stage string) (Summary, error)
 
 	// Up applies a migration stages.
-	Up(options ...MigrationOption) ([]string, error)
+	Up(options ...MigrationOption) ([]MigrationResult, error)
 
 	// Down rolls back migration stages.
-	Down(options ...MigrationOption) ([]string, error)
+	Down(options ...MigrationOption) ([]MigrationResult, error)
+}
+
+type MigrationResult struct {
+	Stage string
+	Name  string
 }
