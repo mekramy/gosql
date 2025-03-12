@@ -213,7 +213,7 @@ func (m *migration) Down(options ...MigrationOption) ([]MigrationResult, error) 
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
 		for _, stage := range option.stages {
 			for _, file := range files {
-				if migrated.includes(file.name, stage) {
+				if !migrated.includes(file.name, stage) {
 					continue
 				}
 
