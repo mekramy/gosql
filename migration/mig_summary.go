@@ -47,3 +47,13 @@ func (s Summary) ForStage(stage string) Summary {
 	}
 	return result
 }
+
+func (s Summary) includes(name, stage string) bool {
+	for _, item := range s {
+		if item.Name == name && item.Stage == stage {
+			return true
+		}
+	}
+
+	return false
+}

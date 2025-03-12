@@ -98,7 +98,7 @@ func (m *migration) StageSummary(stage string) (Summary, error) {
 	return summaries.ForStage(stage), nil
 }
 
-func (m *migration) Up(stage string, options ...MigrationOption) ([]string, error) {
+func (m *migration) Up(options ...MigrationOption) ([]string, error) {
 	// Hot reload on dev mode
 	if m.dev {
 		if err := m.Load(); err != nil {
@@ -119,16 +119,14 @@ func (m *migration) Up(stage string, options ...MigrationOption) ([]string, erro
 	}
 
 	// Skip migrated files
-	migrated, err := m.StageSummary(stage)
+	migrated, err := m.Summary()
 	if err != nil {
 		return nil, err
 	}
 
 	// Filter files
-	files := m.files.
-		Filter([]string{}, migrated.Names()).
-		Filter(option.only, option.exclude)
-	if files.Len() == 0 {
+	files := m.files.Filter(option.only, option.exclude)
+	if files.Len() == 0 || len(option.stages) == 0 {
 		return nil, nil
 	}
 
@@ -137,26 +135,32 @@ func (m *migration) Up(stage string, options ...MigrationOption) ([]string, erro
 	defer cancel()
 	result := make([]string, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
-		for _, file := range files {
-			script, ok := file.UpScript(stage)
-			if !ok || len(script) == 0 {
-				continue
-			}
+		for _, stage := range option.stages {
+			for _, file := range files {
+				if migrated.includes(file.name, stage) {
+					continue
+				}
 
-			err := tx.Exec(ctx, script)
-			if err != nil {
-				return fmt.Errorf("%s: %w", file.name, err)
-			}
+				script, ok := file.UpScript(stage)
+				if !ok || len(script) == 0 {
+					continue
+				}
 
-			err = tx.Exec(
-				ctx,
-				fmt.Sprintf(`INSERT INTO migrations (name, stage) VALUES ('%s', '%s');`, file.name, stage),
-			)
-			if err != nil {
-				return fmt.Errorf("%s: %w", file.name, err)
-			}
+				err := tx.Exec(ctx, script)
+				if err != nil {
+					return fmt.Errorf("%s: %w", file.name, err)
+				}
 
-			result = append(result, file.name)
+				err = tx.Exec(
+					ctx,
+					fmt.Sprintf(`INSERT INTO migrations (name, stage) VALUES ('%s', '%s');`, file.name, stage),
+				)
+				if err != nil {
+					return fmt.Errorf("%s: %w", file.name, err)
+				}
+
+				result = append(result, file.name)
+			}
 		}
 		return nil
 	})
@@ -167,7 +171,7 @@ func (m *migration) Up(stage string, options ...MigrationOption) ([]string, erro
 	return result, nil
 }
 
-func (m *migration) Down(stage string, options ...MigrationOption) ([]string, error) {
+func (m *migration) Down(options ...MigrationOption) ([]string, error) {
 	// Hot reload on dev mode
 	if m.dev {
 		if err := m.Load(); err != nil {
@@ -188,16 +192,14 @@ func (m *migration) Down(stage string, options ...MigrationOption) ([]string, er
 	}
 
 	// Skip migrated files
-	migrated, err := m.StageSummary(stage)
+	migrated, err := m.Summary()
 	if err != nil {
 		return nil, err
 	}
 
 	// Filter files
-	files := m.files.Reverse().
-		Filter(migrated.Names(), []string{}).
-		Filter(option.only, option.exclude)
-	if files.Len() == 0 {
+	files := m.files.Reverse().Filter(option.only, option.exclude)
+	if files.Len() == 0 || len(option.stages) == 0 {
 		return nil, nil
 	}
 
@@ -206,26 +208,32 @@ func (m *migration) Down(stage string, options ...MigrationOption) ([]string, er
 	defer cancel()
 	result := make([]string, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
-		for _, file := range files {
-			script, ok := file.DownScript(stage)
-			if !ok || len(script) == 0 {
-				continue
-			}
+		for _, stage := range option.stages {
+			for _, file := range files {
+				if migrated.includes(file.name, stage) {
+					continue
+				}
 
-			err := tx.Exec(ctx, script)
-			if err != nil {
-				return fmt.Errorf("%s: %w", file.name, err)
-			}
+				script, ok := file.DownScript(stage)
+				if !ok || len(script) == 0 {
+					continue
+				}
 
-			err = tx.Exec(
-				ctx,
-				fmt.Sprintf(`DELETE FROM migrations WHERE name = '%s' AND stage = '%s';`, file.name, stage),
-			)
-			if err != nil {
-				return fmt.Errorf("%s: %w", file.name, err)
-			}
+				err := tx.Exec(ctx, script)
+				if err != nil {
+					return fmt.Errorf("%s: %w", file.name, err)
+				}
 
-			result = append(result, file.name)
+				err = tx.Exec(
+					ctx,
+					fmt.Sprintf(`DELETE FROM migrations WHERE name = '%s' AND stage = '%s';`, file.name, stage),
+				)
+				if err != nil {
+					return fmt.Errorf("%s: %w", file.name, err)
+				}
+
+				result = append(result, file.name)
+			}
 		}
 		return nil
 	})

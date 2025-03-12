@@ -43,8 +43,8 @@ type Migration interface {
 	StageSummary(stage string) (Summary, error)
 
 	// Up applies a migration stages.
-	Up(stage string, options ...MigrationOption) ([]string, error)
+	Up(options ...MigrationOption) ([]string, error)
 
 	// Down rolls back migration stages.
-	Down(stage string, options ...MigrationOption) ([]string, error)
+	Down(options ...MigrationOption) ([]string, error)
 }

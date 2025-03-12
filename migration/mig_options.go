@@ -44,6 +44,13 @@ func WithEnv(isDev bool) Options {
 
 type MigrationOption func(*migrationOption)
 
+// WithStage specifies the stages to include in the migration.
+func WithStage(stages ...string) MigrationOption {
+	return func(o *migrationOption) {
+		o.stages = append(o.stages, stages...)
+	}
+}
+
 // OnlyFiles specifies the files to include in the migration.
 func OnlyFiles(files ...string) MigrationOption {
 	return func(o *migrationOption) {
@@ -59,6 +66,7 @@ func SkipFiles(files ...string) MigrationOption {
 }
 
 type migrationOption struct {
+	stages  []string
 	only    []string
 	exclude []string
 }
