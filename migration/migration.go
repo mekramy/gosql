@@ -23,6 +23,10 @@ func NewMigration(db MigrationSource, fs gofs.FlexibleFS, options ...Options) (M
 		return nil, err
 	}
 
+	if err := mig.Initialize(); err != nil {
+		return nil, err
+	}
+
 	return mig, nil
 }
 
