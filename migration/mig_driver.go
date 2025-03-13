@@ -110,10 +110,7 @@ func (m *migration) Up(options ...MigrationOption) ([]MigrationResult, error) {
 	defer m.mutex.RUnlock()
 
 	// Create option
-	option := &migrationOption{
-		only:    make([]string, 0),
-		exclude: make([]string, 0),
-	}
+	option := newOption()
 	for _, opt := range options {
 		opt(option)
 	}
@@ -125,8 +122,8 @@ func (m *migration) Up(options ...MigrationOption) ([]MigrationResult, error) {
 	}
 
 	// Filter files
-	files := m.files.Filter(option.only, option.exclude)
-	if files.Len() == 0 || len(option.stages) == 0 {
+	files := m.files.Filter(option.only.Elements(), option.exclude.Elements())
+	if files.Len() == 0 || option.stages.Size() == 0 {
 		return nil, nil
 	}
 
@@ -135,7 +132,7 @@ func (m *migration) Up(options ...MigrationOption) ([]MigrationResult, error) {
 	defer cancel()
 	result := make([]MigrationResult, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
-		for _, stage := range option.stages {
+		for _, stage := range option.stages.Elements() {
 			for _, file := range files {
 				if migrated.includes(file.name, stage) {
 					continue
@@ -186,10 +183,7 @@ func (m *migration) Down(options ...MigrationOption) ([]MigrationResult, error) 
 	defer m.mutex.RUnlock()
 
 	// Create option
-	option := &migrationOption{
-		only:    make([]string, 0),
-		exclude: make([]string, 0),
-	}
+	option := newOption()
 	for _, opt := range options {
 		opt(option)
 	}
@@ -201,8 +195,8 @@ func (m *migration) Down(options ...MigrationOption) ([]MigrationResult, error) 
 	}
 
 	// Filter files
-	files := m.files.Reverse().Filter(option.only, option.exclude)
-	if files.Len() == 0 || len(option.stages) == 0 {
+	files := m.files.Reverse().Filter(option.only.Elements(), option.exclude.Elements())
+	if files.Len() == 0 || option.stages.Size() == 0 {
 		return nil, nil
 	}
 
@@ -211,7 +205,7 @@ func (m *migration) Down(options ...MigrationOption) ([]MigrationResult, error) 
 	defer cancel()
 	result := make([]MigrationResult, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
-		for _, stage := range option.stages {
+		for _, stage := range option.stages.Elements() {
 			for _, file := range files {
 				if !migrated.includes(file.name, stage) {
 					continue

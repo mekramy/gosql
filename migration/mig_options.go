@@ -47,26 +47,56 @@ type MigrationOption func(*migrationOption)
 // WithStage specifies the stages to include in the migration.
 func WithStage(stages ...string) MigrationOption {
 	return func(o *migrationOption) {
-		o.stages = append(o.stages, stages...)
+		o.stages.Add(stages...)
 	}
 }
 
 // OnlyFiles specifies the files to include in the migration.
 func OnlyFiles(files ...string) MigrationOption {
 	return func(o *migrationOption) {
-		o.only = append(o.only, files...)
+		o.only.Add(files...)
 	}
 }
 
 // SkipFiles specifies the files to exclude from the migration.
 func SkipFiles(files ...string) MigrationOption {
 	return func(o *migrationOption) {
-		o.exclude = append(o.exclude, files...)
+		o.exclude.Add(files...)
+	}
+}
+
+func newOption() *migrationOption {
+	return &migrationOption{
+		stages:  &optionSet{},
+		only:    &optionSet{},
+		exclude: &optionSet{},
 	}
 }
 
 type migrationOption struct {
-	stages  []string
-	only    []string
-	exclude []string
+	stages  *optionSet
+	only    *optionSet
+	exclude *optionSet
+}
+
+type optionSet struct {
+	elements map[string]struct{}
+}
+
+func (s *optionSet) Add(elements ...string) {
+	for _, element := range elements {
+		s.elements[element] = struct{}{}
+	}
+}
+
+func (s *optionSet) Size() int {
+	return len(s.elements)
+}
+
+func (s *optionSet) Elements() []string {
+	keys := make([]string, 0, len(s.elements))
+	for key := range s.elements {
+		keys = append(keys, key)
+	}
+	return keys
 }
