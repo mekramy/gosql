@@ -33,6 +33,15 @@ type Migration interface {
 	// Load loads migration stages from the filesystem and caches them.
 	Load() error
 
+	// Root returns the root directory of migration files.
+	Root() string
+
+	// Extension returns the file extension for migration files.
+	Extension() string
+
+	// IsDev indicates if it is in development mode.
+	IsDev() bool
+
 	// Initialize sets up the database migration table.
 	Initialize() error
 

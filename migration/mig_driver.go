@@ -49,6 +49,18 @@ func (m *migration) Load() error {
 	return nil
 }
 
+func (m *migration) Root() string {
+	return m.root
+}
+
+func (m *migration) Extension() string {
+	return m.extention
+}
+
+func (m *migration) IsDev() bool {
+	return m.dev
+}
+
 func (m *migration) Initialize() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
