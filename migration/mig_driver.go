@@ -80,7 +80,7 @@ func (m *migration) Summary() (Summary, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	rows, err := m.db.Scan(ctx, `SELECT name, stage FROM migrations;`)
+	rows, err := m.db.Scan(ctx, `SELECT name, stage, created_at FROM migrations ORDER BY created_at ASC;`)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +89,15 @@ func (m *migration) Summary() (Summary, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var name, stage string
-		err := rows.Scan(&name, &stage)
+		var createdAt time.Time
+		err := rows.Scan(&name, &stage, &createdAt)
 		if err != nil {
 			return nil, err
 		}
 		result = append(result, Migrated{
-			Name:  name,
-			Stage: stage,
+			Name:      name,
+			Stage:     stage,
+			CreatedAt: createdAt,
 		})
 	}
 	return result, nil

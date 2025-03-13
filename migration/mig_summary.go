@@ -1,8 +1,11 @@
 package migration
 
+import "time"
+
 type Migrated struct {
-	Name  string `db:"name"`
-	Stage string `db:"stage"`
+	Name      string    `db:"name"`
+	Stage     string    `db:"stage"`
+	CreatedAt time.Time `db:"created_at"`
 }
 
 type Summary []Migrated
@@ -19,18 +22,18 @@ func (s Summary) Names() []string {
 	return result
 }
 
-func (s Summary) GroupByStage() map[string][]string {
-	result := make(map[string][]string)
+func (s Summary) GroupByStage() map[string][]Migrated {
+	result := make(map[string][]Migrated)
 	for _, file := range s {
-		result[file.Stage] = append(result[file.Stage], file.Name)
+		result[file.Stage] = append(result[file.Stage], file)
 	}
 	return result
 }
 
-func (s Summary) GroupByFile() map[string][]string {
-	result := make(map[string][]string)
+func (s Summary) GroupByFile() map[string][]Migrated {
+	result := make(map[string][]Migrated)
 	for _, file := range s {
-		result[file.Name] = append(result[file.Name], file.Stage)
+		result[file.Name] = append(result[file.Name], file)
 	}
 	return result
 }

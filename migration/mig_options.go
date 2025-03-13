@@ -67,9 +67,9 @@ func SkipFiles(files ...string) MigrationOption {
 
 func newOption() *migrationOption {
 	return &migrationOption{
-		stages:  &optionSet{},
-		only:    &optionSet{},
-		exclude: &optionSet{},
+		stages:  &optionSet{elements: make(map[string]struct{})},
+		only:    &optionSet{elements: make(map[string]struct{})},
+		exclude: &optionSet{elements: make(map[string]struct{})},
 	}
 }
 
