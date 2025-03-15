@@ -8,7 +8,7 @@ import (
 func NewMigration(db MigrationSource, fs gofs.FlexibleFS, options ...Options) (Migration, error) {
 	mig := &migration{
 		root:  ".",
-		ext:   ".sql",
+		ext:   "sql",
 		dev:   false,
 		files: make(sortableFiles, 0),
 		fs:    fs,

@@ -26,7 +26,7 @@ func (m *migration) Load() error {
 	defer m.mutex.Unlock()
 
 	// Locate files matching the specified extension
-	files, err := m.fs.Lookup(m.root, ".*"+regexp.QuoteMeta(m.ext))
+	files, err := m.fs.Lookup(m.root, `.*\.`+regexp.QuoteMeta(m.ext))
 	if err != nil {
 		return err
 	}

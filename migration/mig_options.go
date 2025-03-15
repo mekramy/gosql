@@ -20,13 +20,10 @@ func WithRoot(root string) Options {
 	}
 }
 
-// WithExtension sets the file extension for migration files, adding a leading dot if missing.
+// WithExtension sets the file extension for migration files.
 func WithExtension(ext string) Options {
 	ext = strings.TrimSpace(ext)
-	if ext != "" && !strings.HasPrefix(ext, ".") {
-		ext = "." + ext
-	}
-
+	ext = strings.TrimLeft(ext, ".")
 	return func(q *migration) {
 		if ext != "" {
 			q.ext = ext
