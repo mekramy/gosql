@@ -103,7 +103,7 @@ func (m *migration) Summary() (Summary, error) {
 	return result, nil
 }
 
-func (m *migration) Up(stages []string, options ...MigrationOption) ([]MigrationResult, error) {
+func (m *migration) Up(stages []string, options ...MigrationOption) (Summary, error) {
 	if len(stages) == 0 {
 		return nil, nil
 	}
@@ -139,7 +139,7 @@ func (m *migration) Up(stages []string, options ...MigrationOption) ([]Migration
 	// Execute scripts
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-	result := make([]MigrationResult, 0)
+	result := make(Summary, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
 		for _, stage := range stages {
 			for _, file := range files {
@@ -165,9 +165,10 @@ func (m *migration) Up(stages []string, options ...MigrationOption) ([]Migration
 					return fmt.Errorf("%s: %w", file.name, err)
 				}
 
-				result = append(result, MigrationResult{
-					Stage: stage,
-					Name:  file.name,
+				result = append(result, Migrated{
+					Stage:     stage,
+					Name:      file.name,
+					CreatedAt: time.Now(),
 				})
 			}
 		}
@@ -180,7 +181,7 @@ func (m *migration) Up(stages []string, options ...MigrationOption) ([]Migration
 	return result, nil
 }
 
-func (m *migration) Down(stages []string, options ...MigrationOption) ([]MigrationResult, error) {
+func (m *migration) Down(stages []string, options ...MigrationOption) (Summary, error) {
 	if len(stages) == 0 {
 		return nil, nil
 	}
@@ -216,7 +217,7 @@ func (m *migration) Down(stages []string, options ...MigrationOption) ([]Migrati
 	// Execute scripts
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-	result := make([]MigrationResult, 0)
+	result := make(Summary, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
 		for _, stage := range stages {
 			for _, file := range files {
@@ -243,9 +244,10 @@ func (m *migration) Down(stages []string, options ...MigrationOption) ([]Migrati
 					return fmt.Errorf("%s: %w", file.name, err)
 				}
 
-				result = append(result, MigrationResult{
-					Stage: stage,
-					Name:  file.name,
+				result = append(result, Migrated{
+					Stage:     stage,
+					Name:      file.name,
+					CreatedAt: time.Now(),
 				})
 			}
 		}
@@ -258,7 +260,7 @@ func (m *migration) Down(stages []string, options ...MigrationOption) ([]Migrati
 	return result, nil
 }
 
-func (m *migration) Refresh(stages []string, options ...MigrationOption) ([]MigrationResult, error) {
+func (m *migration) Refresh(stages []string, options ...MigrationOption) (Summary, error) {
 	if len(stages) == 0 {
 		return nil, nil
 	}
@@ -292,7 +294,7 @@ func (m *migration) Refresh(stages []string, options ...MigrationOption) ([]Migr
 	// Execute scripts
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-	result := make([]MigrationResult, 0)
+	result := make(Summary, 0)
 	err = m.db.Transaction(ctx, func(tx ExecutableScanner) error {
 		for _, stage := range stages {
 			// Down
@@ -341,9 +343,10 @@ func (m *migration) Refresh(stages []string, options ...MigrationOption) ([]Migr
 					return fmt.Errorf(`up "%s": %w`, file.name, err)
 				}
 
-				result = append(result, MigrationResult{
-					Stage: stage,
-					Name:  file.name,
+				result = append(result, Migrated{
+					Stage:     stage,
+					Name:      file.name,
+					CreatedAt: time.Now(),
 				})
 			}
 		}
