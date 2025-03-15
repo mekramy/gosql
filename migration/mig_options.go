@@ -29,7 +29,7 @@ func WithExtension(ext string) Options {
 
 	return func(q *migration) {
 		if ext != "" {
-			q.extention = ext
+			q.ext = ext
 		}
 	}
 }
@@ -43,13 +43,6 @@ func WithEnv(isDev bool) Options {
 }
 
 type MigrationOption func(*migrationOption)
-
-// WithStage specifies the stages to include in the migration.
-func WithStage(stages ...string) MigrationOption {
-	return func(o *migrationOption) {
-		o.stages.Add(stages...)
-	}
-}
 
 // OnlyFiles specifies the files to include in the migration.
 func OnlyFiles(files ...string) MigrationOption {
@@ -67,14 +60,12 @@ func SkipFiles(files ...string) MigrationOption {
 
 func newOption() *migrationOption {
 	return &migrationOption{
-		stages:  &optionSet{elements: make(map[string]struct{})},
 		only:    &optionSet{elements: make(map[string]struct{})},
 		exclude: &optionSet{elements: make(map[string]struct{})},
 	}
 }
 
 type migrationOption struct {
-	stages  *optionSet
 	only    *optionSet
 	exclude *optionSet
 }

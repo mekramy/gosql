@@ -7,12 +7,12 @@ import (
 // NewMigration initializes a migration with the specified database source, filesystem, and options.
 func NewMigration(db MigrationSource, fs gofs.FlexibleFS, options ...Options) (Migration, error) {
 	mig := &migration{
-		root:      ".",
-		extention: ".sql",
-		dev:       false,
-		files:     make(sortableFiles, 0),
-		fs:        fs,
-		db:        db,
+		root:  ".",
+		ext:   ".sql",
+		dev:   false,
+		files: make(sortableFiles, 0),
+		fs:    fs,
+		db:    db,
 	}
 
 	for _, opt := range options {
@@ -52,14 +52,14 @@ type Migration interface {
 	// Summary returns an overview of the migration.
 	Summary() (Summary, error)
 
-	// StageSummary returns an overview of a specific migration stage.
-	StageSummary(stage string) (Summary, error)
-
-	// Up applies a migration stages.
-	Up(options ...MigrationOption) ([]MigrationResult, error)
+	// Up applies migration stages.
+	Up(stages []string, options ...MigrationOption) ([]MigrationResult, error)
 
 	// Down rolls back migration stages.
-	Down(options ...MigrationOption) ([]MigrationResult, error)
+	Down(stages []string, options ...MigrationOption) ([]MigrationResult, error)
+
+	// Refresh rolls back and reapplies migration stages.
+	Refresh(stages []string, options ...MigrationOption) ([]MigrationResult, error)
 }
 
 type MigrationResult struct {
